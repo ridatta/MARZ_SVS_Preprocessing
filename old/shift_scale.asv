@@ -1,0 +1,44 @@
+clc; close all; clear;
+
+
+x = linspace(0,1,100);
+
+y = @(x) -(x - 1) .* x;
+y2 = y(0.8*x - 0.1);
+
+figure
+plot(x,y(x),DisplayName='target'); hold on;
+plot(x,y2,DisplayName='Measured');
+
+ylim([0,0.4]); legend();
+
+
+[a,b,corr] = find_shift_scale(x,y(x),y2)
+
+
+plot(x,corr,'--',DisplayName='Corr.');
+plot(x,sweep_correct(x,y,shift,scale),'--',DisplayName='Corr. 2');
+ 
+
+function [a,b,corr] = find_shift_scale(x,y_target,y)
+
+
+PP = spline(x,y);
+func = @(x) ppval(PP,x); % fitting func.
+ft = fittype(@(a,b,x) func((x+b)/a),...
+    'coefficients',{'a','b'},'independent',{'x'});
+
+
+f = fit(x(:),y_target(:),ft,'StartPoint',[0.5,0.2]);
+
+a = f.a; b = f.b; 
+
+corr = f(x);
+
+end
+
+
+function out = sweep_correct(x,y,shift,scale)
+    PP = spline(x,y);
+    out = PPval((x+shift)/scale);
+end
